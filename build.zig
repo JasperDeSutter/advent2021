@@ -16,4 +16,9 @@ pub fn build(b: *std.build.Builder) !void {
 
     const run_step = b.step("day01", "Run day01");
     run_step.dependOn(&run_cmd.step);
+
+    const input_path = b.pathFromRoot("inputdata/day01.txt");
+    const file = try std.fs.openFileAbsolute(input_path, .{ .read = true });
+    const input = try file.readToEndAlloc(b.allocator, 10_000_000);
+    run_cmd.addArg(input);
 }

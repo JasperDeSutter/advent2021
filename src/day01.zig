@@ -1,15 +1,26 @@
 const std = @import("std");
 
 pub fn main() anyerror!void {
-    std.debug.print("hello\n", .{});
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer if (gpa.deinit()) @panic("leak");
+    _ = &gpa.allocator;
+    var args_iter = std.process.args();
+    defer args_iter.deinit();
+
+    _ = args_iter.skip();
+    const input = args_iter.nextPosix().?;
+    const result = numberOfIncrements(input);
+    std.debug.print("result: {}\n", .{result});
 }
 
-fn numberOfIncrements(input: []const u8) anyerror!u16 {
+const int = u16;
+
+fn numberOfIncrements(input: []const u8) anyerror!int {
     var lines = std.mem.split(u8, input, "\n");
-    var last = @intCast(u16, std.math.maxInt(u16));
-    var increments: u16 = 0;
+    var last = @intCast(int, std.math.maxInt(int));
+    var increments: int = 0;
     while (lines.next()) |line| {
-        const next = try std.fmt.parseInt(u16, line, 10);
+        const next = try std.fmt.parseInt(int, line, 10);
         if (next > last) {
             increments += 1;
         }
@@ -33,5 +44,5 @@ test {
     ;
 
     const result = try numberOfIncrements(input);
-    try std.testing.expectEqual(@intCast(u16, 7), result);
+    try std.testing.expectEqual(@intCast(int, 7), result);
 }
