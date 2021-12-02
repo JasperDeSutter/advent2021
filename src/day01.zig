@@ -1,15 +1,11 @@
 const std = @import("std");
+const runner = @import("./runner.zig");
 
 pub fn main() anyerror!void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer if (gpa.deinit()) @panic("leak");
-    _ = &gpa.allocator;
-    var args_iter = std.process.args();
-    defer args_iter.deinit();
+    try runner.run(solve);
+}
 
-    _ = args_iter.skip();
-    const input = args_iter.nextPosix().?;
-
+fn solve(_: *std.mem.Allocator, input: []const u8) anyerror!void {
     const result1 = numberOfIncrements(1, input);
     std.debug.print("result 1: {}\n", .{result1});
 
