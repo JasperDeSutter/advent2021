@@ -6,15 +6,18 @@ pub fn main() anyerror!void {
 }
 
 fn solve(_: *std.mem.Allocator, input: []const u8) anyerror!void {
-    const result = try multipliedCoordinate(input);
+    const result = try multipliedCoordinate(input, false);
     std.debug.print("result: {d}\n", .{result});
+    const result_correct = try multipliedCoordinate(input, true);
+    std.debug.print("correct result: {d}\n", .{result_correct});
 }
 
-fn multipliedCoordinate(input: []const u8) anyerror!i32 {
+fn multipliedCoordinate(input: []const u8, aim_correct: bool) anyerror!i32 {
     var lines = std.mem.split(u8, input, "\n");
 
-    var depth: i32 = 0;
+    var aim: i32 = 0;
     var hor_pos: i32 = 0;
+    var depth: i32 = 0;
 
     while (lines.next()) |line| {
         var parts = std.mem.split(u8, line, " ");
@@ -22,17 +25,21 @@ fn multipliedCoordinate(input: []const u8) anyerror!i32 {
         const distance = try std.fmt.parseInt(i32, parts.next().?, 10);
 
         if (std.mem.eql(u8, direction, "down")) {
-            depth += distance;
+            aim += distance;
         } else if (std.mem.eql(u8, direction, "up")) {
-            depth -= distance;
+            aim -= distance;
         } else if (std.mem.eql(u8, direction, "forward")) {
+            depth += aim * distance;
             hor_pos += distance;
         } else {
             @panic("unrecognized input");
         }
     }
-
-    return depth * hor_pos;
+    if (aim_correct) {
+        return depth * hor_pos;
+    } else {
+        return aim * hor_pos;
+    }
 }
 
 test {
@@ -45,5 +52,8 @@ test {
         \\forward 2
     ;
     const expected_result: i32 = 150;
-    try std.testing.expectEqual(expected_result, try multipliedCoordinate(input));
+    try std.testing.expectEqual(expected_result, try multipliedCoordinate(input, false));
+
+    const expected_correct_result: i32 = 900;
+    try std.testing.expectEqual(expected_correct_result, try multipliedCoordinate(input, true));
 }
