@@ -8,7 +8,7 @@ pub fn build(b: *std.build.Builder) !void {
     const test_step = b.step("test", "Run all tests");
 
     var day: u32 = 1;
-    var end: u32 = 2;
+    var end: u32 = 4;
     while (day <= end) : (day += 1) {
         var dayStringBuf: [5]u8 = undefined;
         const dayString = try std.fmt.bufPrint(dayStringBuf[0..], "day{:0>2}", .{day});
@@ -27,9 +27,7 @@ pub fn build(b: *std.build.Builder) !void {
         run_step.dependOn(&run_cmd.step);
 
         const input_path = b.pathFromRoot(b.fmt("inputdata/{s}.txt", .{dayString}));
-        const file = try std.fs.openFileAbsolute(input_path, .{ .read = true });
-        const input = try file.readToEndAlloc(b.allocator, 10_000_000);
-        run_cmd.addArg(input);
+        run_cmd.addArg(input_path);
 
         const test_cmd = b.addTest(srcFile);
         test_cmd.setTarget(target);
