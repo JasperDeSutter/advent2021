@@ -42,16 +42,24 @@ pub fn Range(comptime Item: type) type {
     return struct {
         i: Item,
         end: Item,
+        negative: bool,
+        first: bool,
 
         pub fn init(start: Item, end: Item) @This() {
-            return .{ .i = start, .end = end };
+            if (end > start) return .{ .i = start, .end = end, .negative = false, .first = true };
+            return .{ .i = start, .end = end, .negative = true, .first = true };
         }
 
         pub fn next(self: *@This()) ?Item {
-            const i = self.i;
-            if (i >= self.end) return null;
-            self.i += 1;
-            return i;
+            if (self.first) {
+                self.first = false;
+                return self.i;
+            }
+            if (self.i == self.end) return null;
+            if (self.negative) {
+                self.i = self.i - 1;
+            } else self.i = self.i + 1;
+            return self.i;
         }
     };
 }
@@ -127,4 +135,18 @@ pub fn RefIter(comptime Inner: type) type {
 
 pub fn ref(inner: anytype) RefIter(@TypeOf(inner)) {
     return RefIter(@TypeOf(inner)).init(inner);
+}
+
+pub fn RepeatIter(comptime Item: type) type {
+    return struct {
+        item: Item,
+
+        pub fn next(self: *@This()) ?Item {
+            return self.item;
+        }
+    };
+}
+
+pub fn repeat(item: anytype) RepeatIter(@TypeOf(item)) {
+    return .{ .item = item };
 }
