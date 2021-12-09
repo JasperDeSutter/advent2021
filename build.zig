@@ -8,7 +8,7 @@ pub fn build(b: *std.build.Builder) !void {
     const test_step = b.step("test", "Run all tests");
 
     var day: u32 = 1;
-    var end: u32 = 6;
+    var end: u32 = 7;
     while (day <= end) : (day += 1) {
         var dayStringBuf: [5]u8 = undefined;
         const dayString = try std.fmt.bufPrint(dayStringBuf[0..], "day{:0>2}", .{day});

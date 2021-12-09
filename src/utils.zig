@@ -35,7 +35,7 @@ pub fn Enumerate(comptime Inner: type) type {
 
 pub fn enumerate(it: anytype) Zip(@TypeOf(it), Range(usize)) { // Enumerate(@TypeOf(it)) {
     // return Enumerate(@TypeOf(it)).new(it);
-    return zip(it, range(0, std.math.maxInt(usize)));
+    return zip(it, range(usize, 0, std.math.maxInt(usize)));
 }
 
 pub fn Range(comptime Item: type) type {
@@ -64,8 +64,8 @@ pub fn Range(comptime Item: type) type {
     };
 }
 
-pub fn range(start: usize, end: usize) Range(usize) {
-    return Range(usize).init(start, end);
+pub fn range(comptime Item: type, start: Item, end: Item) Range(Item) {
+    return Range(Item).init(start, end);
 }
 
 pub fn SliceIter(comptime Item: type) type {

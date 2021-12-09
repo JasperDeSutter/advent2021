@@ -27,8 +27,8 @@ fn overlappingLineCount(input: []const u8, diagonals: bool) anyerror!usize {
         const arrow_i = std.mem.indexOf(u8, line, "->").?;
         const first_part = try coord(line[0 .. arrow_i - 1]);
         const second_part = try coord(line[arrow_i + 3 ..]);
-        var rows = utils.range(first_part[1], second_part[1]);
-        var cols = utils.range(first_part[0], second_part[0]);
+        var rows = utils.range(u16, first_part[1], second_part[1]);
+        var cols = utils.range(u16, first_part[0], second_part[0]);
 
         if (first_part[0] == second_part[0]) {
             var iter = utils.zip(rows, utils.repeat(first_part[0]));

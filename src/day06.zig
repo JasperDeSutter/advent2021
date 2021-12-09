@@ -23,7 +23,7 @@ fn reproduceLanternfish(input: []const u8, days: u16) anyerror!int{
         arr[i] += 1;
     }
     var birth_queue = [_]int{0} ** 2;
-    var iter = utils.range(0, days - 1);
+    var iter = utils.range(u16, 0, days - 1);
     while (iter.next()) |it| {
         const i = it % 7;
         const current = arr[i];

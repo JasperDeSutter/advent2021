@@ -12,6 +12,12 @@ fn solve(_: *std.mem.Allocator, input: []const u8) anyerror!void {
     std.debug.print("correct result: {d}\n", .{result_correct});
 }
 
+const Dir = enum { up, down, forward };
+const matcher = std.ComptimeStringMap(Dir, .{
+    .{ "up", .up },
+    .{ "down", .down },
+    .{ "forward", .forward },
+});
 fn multipliedCoordinate(input: []const u8, aim_correct: bool) anyerror!i32 {
     var lines = std.mem.split(u8, input, "\n");
 
@@ -24,15 +30,13 @@ fn multipliedCoordinate(input: []const u8, aim_correct: bool) anyerror!i32 {
         const direction = parts.next().?;
         const distance = try std.fmt.parseInt(i32, parts.next().?, 10);
 
-        if (std.mem.eql(u8, direction, "down")) {
-            aim += distance;
-        } else if (std.mem.eql(u8, direction, "up")) {
-            aim -= distance;
-        } else if (std.mem.eql(u8, direction, "forward")) {
-            depth += aim * distance;
-            hor_pos += distance;
-        } else {
-            @panic("unrecognized input");
+        switch (matcher.get(direction).?) {
+            .down => aim += distance,
+            .up => aim -= distance,
+            .forward => {
+                depth += aim * distance;
+                hor_pos += distance;
+            },
         }
     }
     if (aim_correct) {

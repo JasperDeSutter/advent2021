@@ -31,7 +31,7 @@ fn Board(comptime El: type) type {
         }
 
         fn checkRow(this: *const @This(), row: usize, value: El) bool {
-            var cols = utils.range(0, 5 - 1);
+            var cols = utils.range(u8, 0, 5 - 1);
             while (cols.next()) |col| {
                 if (this.rows[row][col] != value) {
                     return false;
@@ -89,7 +89,7 @@ fn bingo(alloc: *std.mem.Allocator, input: []const u8) anyerror![2]usize {
     var last_value: usize = 0;
     while (lines.next()) |_| {
         var board = Board(u8).init(0);
-        var range = utils.zip(utils.range(0, 5 - 1), utils.ref(&lines));
+        var range = utils.zip(utils.range(u8, 0, 5 - 1), utils.ref(&lines));
         while (range.next()) |line| {
             var numbers = utils.enumerate(std.mem.tokenize(u8, line.right, " "));
 
