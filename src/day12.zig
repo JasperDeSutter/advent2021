@@ -7,11 +7,29 @@ pub fn main() anyerror!void {
 }
 
 fn solve(alloc: *std.mem.Allocator, input: []const u8) anyerror!void {
-    const paths = try countPaths(alloc, input);
-    std.debug.print("paths {}\n", .{ paths });
+    const paths = try countPaths(alloc, input, false);
+    std.debug.print("paths {}\n", .{paths});
+    const pathsWithDouble = try countPaths(alloc, input, true);
+    std.debug.print("paths with double {}\n", .{pathsWithDouble});
 }
 
-fn countPaths(alloc: *std.mem.Allocator, input: []const u8) !u32 {
+const Path = struct {
+    elems: std.ArrayList([]const u8),
+    used_double: bool,
+
+    fn init(alloc: *std.mem.Allocator, used_double: bool) Path {
+        return Path{
+            .elems = std.ArrayList([]const u8).init(alloc),
+            .used_double = used_double,
+        };
+    }
+
+    fn last(self: *const @This()) []const u8 {
+        return self.elems.items[self.elems.items.len - 1];
+    }
+};
+
+fn countPaths(alloc: *std.mem.Allocator, input: []const u8, use_double: bool) !u32 {
     var lines = std.mem.split(u8, input, "\n");
     var connections = std.StringHashMap(std.ArrayList([]const u8)).init(alloc);
     defer {
@@ -31,31 +49,31 @@ fn countPaths(alloc: *std.mem.Allocator, input: []const u8) !u32 {
         if (!aEntry.found_existing) {
             aEntry.value_ptr.* = std.ArrayList([]const u8).init(alloc);
         }
-        (try aEntry.value_ptr.*.addOne()).* = b;
-        
+        if (!std.mem.eql(u8, b, "start")) try aEntry.value_ptr.*.append(b);
+
         const bEntry = try connections.getOrPut(b);
         if (!bEntry.found_existing) {
             bEntry.value_ptr.* = std.ArrayList([]const u8).init(alloc);
         }
-        (try bEntry.value_ptr.*.addOne()).* = a;
+        if (!std.mem.eql(u8, a, "start")) try bEntry.value_ptr.*.append(a);
     }
 
-    var todo = std.ArrayList(std.ArrayList([]const u8)).init(alloc);
+    var todo = std.ArrayList(Path).init(alloc);
     defer {
         for (todo.items) |item| {
-            item.deinit();
+            item.elems.deinit();
         }
         todo.deinit();
     }
 
-    var start = std.ArrayList([]const u8).init(alloc);
-    try start.append("start");
+    var start = Path.init(alloc, !use_double);
+    try start.elems.append("start");
     try todo.append(start);
     var paths: u32 = 0;
 
     while (todo.popOrNull()) |path| {
-        defer path.deinit();
-        const last = path.items[path.items.len - 1];
+        defer path.elems.deinit();
+        const last = path.last();
         if (std.mem.eql(u8, last, "end")) {
             paths += 1;
             continue;
@@ -63,21 +81,23 @@ fn countPaths(alloc: *std.mem.Allocator, input: []const u8) !u32 {
 
         const edges = connections.get(last).?;
         cand: for (edges.items) |candidate| {
+            var used_double = path.used_double;
             if (isLower(candidate)) {
-                 for (path.items) |visited| {
+                for (path.elems.items) |visited| {
                     if (std.mem.eql(u8, visited, candidate)) {
-                        continue :cand;
+                        if (used_double) continue :cand;
+                        used_double = true;
+                        break;
                     }
                 }
             }
-            
-            var copy = std.ArrayList([]const u8).init(alloc);
-            try copy.appendSlice(path.items);
-            try copy.append(candidate);
+
+            var copy = Path.init(alloc, used_double);
+            try copy.elems.appendSlice(path.elems.items);
+            try copy.elems.append(candidate);
 
             try todo.append(copy);
         }
-
     }
 
     return paths;
@@ -103,5 +123,6 @@ test {
         \\b-end
     ;
 
-    try std.testing.expectEqual(countPaths(std.testing.allocator, input1), 10);
+    try std.testing.expectEqual(countPaths(std.testing.allocator, input1, false), 10);
+    try std.testing.expectEqual(countPaths(std.testing.allocator, input1, true), 36);
 }
