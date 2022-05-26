@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 pub fn run(
     solve: fn (
@@ -13,7 +14,14 @@ pub fn run(
     var args_iter = std.process.args();
     defer args_iter.deinit();
     _ = args_iter.skip();
-    const input_path = args_iter.nextPosix().?;
+    const input_path = switch (builtin.os.tag) {
+        .windows => blk: {
+            const res = try args_iter.next(alloc).?;
+            defer alloc.free(res);
+            break :blk res;
+        },
+        else => args_iter.nextPosix().?,
+    };
 
     const file = try std.fs.openFileAbsolute(input_path, .{ .read = true });
     defer file.close();
