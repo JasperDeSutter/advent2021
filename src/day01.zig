@@ -1,11 +1,11 @@
 const std = @import("std");
-const runner = @import("./runner.zig");
+const runner = @import("runner.zig");
 
 pub fn main() anyerror!void {
     try runner.run(solve);
 }
 
-fn solve(_: *std.mem.Allocator, input: []const u8) anyerror!void {
+fn solve(_: std.mem.Allocator, input: []const u8) anyerror!void {
     const result1 = numberOfIncrements(1, input);
     std.debug.print("result 1: {}\n", .{result1});
 

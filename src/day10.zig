@@ -1,12 +1,12 @@
 const std = @import("std");
-const runner = @import("./runner.zig");
-const utils = @import("./utils.zig");
+const runner = @import("runner.zig");
+const utils = @import("utils.zig");
 
 pub fn main() anyerror!void {
     try runner.run(solve);
 }
 
-fn solve(alloc: *std.mem.Allocator, input: []const u8) anyerror!void {
+fn solve(alloc: std.mem.Allocator, input: []const u8) anyerror!void {
     const result = totalSyntaxErrorAndMiddleScore(alloc, input);
     std.debug.print("total syntax error: {d}\n", .{result[0]});
     std.debug.print("autocomplete score: {d}\n", .{result[1]});
@@ -93,7 +93,7 @@ fn autocompleteLine(line: []const u8) u64 {
     return score;
 }
 
-fn totalSyntaxErrorAndMiddleScore(alloc: *std.mem.Allocator, input: []const u8) [2]u64 {
+fn totalSyntaxErrorAndMiddleScore(alloc: std.mem.Allocator, input: []const u8) [2]u64 {
     var lines = std.mem.split(u8, input, "\n");
     var scores = std.ArrayList(u64).init(alloc);
     defer scores.deinit();

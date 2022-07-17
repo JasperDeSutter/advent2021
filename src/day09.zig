@@ -1,6 +1,6 @@
 const std = @import("std");
-const runner = @import("./runner.zig");
-const utils = @import("./utils.zig");
+const runner = @import("runner.zig");
+const utils = @import("utils.zig");
 
 pub fn main() anyerror!void {
     try runner.run(solve);
@@ -10,7 +10,7 @@ fn HeightMap() type {
     return struct {
         rows: std.ArrayList([]const u8),
 
-        fn init(alloc: *std.mem.Allocator) @This() {
+        fn init(alloc: std.mem.Allocator) @This() {
             return .{ .rows = std.ArrayList([]const u8).init(alloc) };
         }
 
@@ -73,13 +73,13 @@ fn HeightMap() type {
     };
 }
 
-fn solve(alloc: *std.mem.Allocator, input: []const u8) anyerror!void {
+fn solve(alloc: std.mem.Allocator, input: []const u8) anyerror!void {
     const result1 = try parseHeightMap(alloc, input);
     defer result1.deinit();
     std.debug.print("risk level: {d}\n", .{result1.sumRiskLevel()});
 }
 
-fn parseHeightMap(alloc: *std.mem.Allocator, input: []const u8) anyerror!HeightMap() {
+fn parseHeightMap(alloc: std.mem.Allocator, input: []const u8) anyerror!HeightMap() {
     var lines = std.mem.split(u8, input, "\n");
     var height_map = HeightMap().init(alloc);
     while (lines.next()) |line| {

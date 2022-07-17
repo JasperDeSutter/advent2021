@@ -1,12 +1,12 @@
 const std = @import("std");
-const runner = @import("./runner.zig");
-const utils = @import("./utils.zig");
+const runner = @import("runner.zig");
+const utils = @import("utils.zig");
 
 pub fn main() anyerror!void {
     try runner.run(solve);
 }
 
-fn solve(_: *std.mem.Allocator, input: []const u8) anyerror!void {
+fn solve(_: std.mem.Allocator, input: []const u8) anyerror!void {
     const lanternfishes = try reproduceLanternfish(input, 80);
     std.debug.print("lanternfishes: {d}\n", .{lanternfishes});
     const lanternfishes256 = try reproduceLanternfish(input, 256);

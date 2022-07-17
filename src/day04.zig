@@ -1,11 +1,11 @@
 const std = @import("std");
-const runner = @import("./runner.zig");
-const utils = @import("./utils.zig");
+const runner = @import("runner.zig");
+const utils = @import("utils.zig");
 pub fn main() anyerror!void {
     try runner.run(solve);
 }
 
-fn solve(alloc: *std.mem.Allocator, input: []const u8) anyerror!void {
+fn solve(alloc: std.mem.Allocator, input: []const u8) anyerror!void {
     const result = try bingo(alloc, input);
     std.debug.print("first bingo score: {d}\n", .{result[0]});
     std.debug.print("last bingo score: {d}\n", .{result[1]});
@@ -69,7 +69,7 @@ fn Board(comptime El: type) type {
     };
 }
 
-fn bingo(alloc: *std.mem.Allocator, input: []const u8) anyerror![2]usize {
+fn bingo(alloc: std.mem.Allocator, input: []const u8) anyerror![2]usize {
     var lines = std.mem.split(u8, input, "\n");
 
     var numbers_arr = std.ArrayList(u8).init(alloc);

@@ -1,11 +1,11 @@
 const std = @import("std");
-const runner = @import("./runner.zig");
+const runner = @import("runner.zig");
 
 pub fn main() anyerror!void {
     try runner.run(solve);
 }
 
-fn solve(alloc: *std.mem.Allocator, input: []const u8) anyerror!void {
+fn solve(alloc: std.mem.Allocator, input: []const u8) anyerror!void {
     const diagnostics = try Diagnostics(12).new(alloc, input);
     defer diagnostics.deinit();
     std.debug.print("powerConsumption: {d}\n", .{diagnostics.powerConsumption()});
@@ -26,7 +26,7 @@ fn Diagnostics(comptime len: comptime_int) type {
             self.arr.deinit();
         }
 
-        fn new(alloc: *std.mem.Allocator, input: []const u8) anyerror!@This() {
+        fn new(alloc: std.mem.Allocator, input: []const u8) anyerror!@This() {
             var lines = std.mem.split(u8, input, "\n");
             var arr = try Arr.initCapacity(alloc, (input.len + 1) / (len / 1));
             var slots = [_]i16{0} ** len;

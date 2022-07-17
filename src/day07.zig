@@ -1,12 +1,12 @@
 const std = @import("std");
-const runner = @import("./runner.zig");
-const utils = @import("./utils.zig");
+const runner = @import("runner.zig");
+const utils = @import("utils.zig");
 
 pub fn main() anyerror!void {
     try runner.run(solve);
 }
 
-fn solve(alloc: *std.mem.Allocator, input: []const u8) anyerror!void {
+fn solve(alloc: std.mem.Allocator, input: []const u8) anyerror!void {
     const result = try bestCrabAlignment(alloc, input);
     std.debug.print("least crab fuel: {d}\n", .{result.med_result});
     std.debug.print("least crab fuel2: {d}\n", .{result.avg_result});
@@ -17,7 +17,7 @@ const Result = struct {
     med_result: u64,
 };
 
-fn bestCrabAlignment(alloc: *std.mem.Allocator, input: []const u8) anyerror!Result {
+fn bestCrabAlignment(alloc: std.mem.Allocator, input: []const u8) anyerror!Result {
     var arr = std.ArrayList(u16).init(alloc);
     defer arr.deinit();
     var numbers = std.mem.split(u8, input, ",");
