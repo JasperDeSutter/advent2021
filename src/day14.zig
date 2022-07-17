@@ -1,22 +1,34 @@
 const std = @import("std");
-const runner = @import("./runner.zig");
-const utils = @import("./utils.zig");
+const runner = @import("runner.zig");
+const utils = @import("utils.zig");
 
 pub fn main() anyerror!void {
     try runner.run(solve);
 }
 
-fn solve(alloc: *std.mem.Allocator, input: []const u8) anyerror!void {
+fn solve(alloc: std.mem.Allocator, input: []const u8) anyerror!void {
     const freq = try countFrequencies(alloc, input, 10);
-    std.debug.print("freq {}\n", .{freq});
+    std.debug.print("freq 10: {}\n", .{freq});
+
+    const freq40 = try countFrequencies(alloc, input, 40);
+    std.debug.print("freq 40: {}\n", .{freq40});
 }
 
-fn countFrequencies(alloc: *std.mem.Allocator, input: []const u8, iterations: u8) anyerror!u32 {
+fn mapAdd(hm: *std.AutoHashMap([2]u8, u64), key: [2]u8, val: u64) !void {
+    var res = try hm.getOrPut(key);
+    if (res.found_existing) {
+        res.value_ptr.* += val;
+    } else {
+        res.value_ptr.* = val;
+    }
+}
+
+fn countFrequencies(alloc: std.mem.Allocator, input: []const u8, iterations: u8) anyerror!u64 {
     var iter = std.mem.split(u8, input, "\n");
     const template = iter.next().?;
     _ = iter.next();
 
-    var rules = std.AutoHashMap([2]u8, u8).init(alloc);
+    var rules = std.AutoHashMap([2]u8, [2][2]u8).init(alloc);
     defer rules.deinit();
 
     while (iter.next()) |item| {
@@ -25,53 +37,60 @@ fn countFrequencies(alloc: *std.mem.Allocator, input: []const u8, iterations: u8
         _ = iter2.next();
         const insert = iter2.next().?;
 
-        try rules.put(.{ first[0], first[1] }, insert[0]);
+        try rules.put(.{ first[0], first[1] }, .{ .{ first[0], insert[0] }, .{ insert[0], first[1] } });
     }
 
-    const Node = std.SinglyLinkedList(u8).Node;
-    var start = Node{ .next = null, .data = 0 };
-    defer {
-        var next = start.next;
-        while (next) |n| {
-            next = n.next;
-            alloc.destroy(n);
-        }
+    var counts = std.AutoHashMap([2]u8, u64).init(alloc);
+    defer counts.deinit();
+
+    var templateIter = utils.iter(u8, template);
+    var first = templateIter.next().?;
+    while (templateIter.next()) |char| {
+        try mapAdd(&counts, .{ first.*, char.* }, 1);
+        first = char;
     }
 
-    var counts = [1]u32{0} ** 26;
+    var i = iterations;
+    while (i > 0) : (i -= 1) {
+        var newCounts = std.AutoHashMap([2]u8, u64).init(alloc);
 
-    var lastNode: *Node = &start;
-    for (template) |char| {
-        const node = try alloc.create(Node);
-        node.*.data = char;
-        counts[char - 'A'] += 1;
-        Node.insertAfter(lastNode, node);
-        lastNode = node;
-    }
-
-    var rem: u8 = iterations;
-    while (rem > 0) : (rem -= 1) {
-        var node = &start;
-        while (node.next) |next| {
-            if (rules.get(.{ node.data, next.data })) |val| {
-                const new = try alloc.create(Node);
-                new.*.data = val;
-                Node.insertAfter(node, new);
-
-                counts[val - 'A'] += 1;
+        var items = counts.iterator();
+        while (items.next()) |item| {
+            const key = item.key_ptr.*;
+            const count = item.value_ptr.*;
+            if (rules.get(key)) |rule| {
+                try mapAdd(&newCounts, rule[0], count);
+                try mapAdd(&newCounts, rule[1], count);
+            } else {
+                try mapAdd(&newCounts, key, count);
             }
-            node = next;
         }
+
+        counts.deinit();
+        counts = newCounts;
     }
 
-    var min: u32 = std.math.maxInt(u32);
-    var max: u32 = 0;
-    for (counts) |count| {
+    var letterCounts = [1]u64{0} ** 26;
+    // every letter is double except for first and lastof template
+    letterCounts[template[0] - 'A'] = 1;
+    letterCounts[template[template.len - 1] - 'A'] += 1;
+
+    var valueIter = counts.iterator();
+    while (valueIter.next()) |value| {
+        const key = value.key_ptr.*;
+        const count = value.value_ptr.*;
+        letterCounts[key[0] - 'A'] += count;
+        letterCounts[key[1] - 'A'] += count;
+    }
+
+    var min: u64 = std.math.maxInt(u64);
+    var max: u64 = 0;
+    for (letterCounts) |count| {
         if (count == 0) continue;
         if (count < min) min = count;
         if (count > max) max = count;
     }
-    return max - min;
+    return max / 2 - min / 2;
 }
 
 test {
@@ -98,4 +117,7 @@ test {
 
     const result = try countFrequencies(std.testing.allocator, input, 10);
     try std.testing.expectEqual(result, 1588);
+
+    const result40 = try countFrequencies(std.testing.allocator, input, 40);
+    try std.testing.expectEqual(result40, 2188189693529);
 }
