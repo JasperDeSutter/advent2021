@@ -14,7 +14,24 @@ fn solve(alloc: std.mem.Allocator, input: []const u8) anyerror!void {
     std.debug.print("freq 40: {}\n", .{freq40});
 }
 
-fn mapAdd(hm: *std.AutoHashMap([2]u8, u64), key: [2]u8, val: u64) !void {
+fn hashFn(_: HashMapContext, key: [2]u8) u64 {
+    return @intCast(u64, key[0]) << 8 | key[1];
+}
+
+fn eqlFn(_: HashMapContext, a: [2]u8, b: [2]u8) bool {
+    return a[0] == b[0] and a[1] == b[1];
+}
+
+const HashMapContext = struct {
+    pub const hash = hashFn;
+    pub const eql = eqlFn;
+};
+
+fn HashMap(comptime V: type) type {
+    return std.HashMap([2]u8, V, HashMapContext, std.hash_map.default_max_load_percentage);
+}
+
+fn mapAdd(hm: *HashMap(u64), key: [2]u8, val: u64) !void {
     var res = try hm.getOrPut(key);
     if (res.found_existing) {
         res.value_ptr.* += val;
@@ -28,7 +45,7 @@ fn countFrequencies(alloc: std.mem.Allocator, input: []const u8, iterations: u8)
     const template = iter.next().?;
     _ = iter.next();
 
-    var rules = std.AutoHashMap([2]u8, [2][2]u8).init(alloc);
+    var rules = HashMap([2][2]u8).init(alloc);
     defer rules.deinit();
 
     while (iter.next()) |item| {
@@ -40,7 +57,7 @@ fn countFrequencies(alloc: std.mem.Allocator, input: []const u8, iterations: u8)
         try rules.put(.{ first[0], first[1] }, .{ .{ first[0], insert[0] }, .{ insert[0], first[1] } });
     }
 
-    var counts = std.AutoHashMap([2]u8, u64).init(alloc);
+    var counts = HashMap(u64).init(alloc);
     defer counts.deinit();
 
     var templateIter = utils.iter(u8, template);
@@ -50,10 +67,11 @@ fn countFrequencies(alloc: std.mem.Allocator, input: []const u8, iterations: u8)
         first = char;
     }
 
+    var newCounts = HashMap(u64).init(alloc);
+    defer newCounts.deinit();
+
     var i = iterations;
     while (i > 0) : (i -= 1) {
-        var newCounts = std.AutoHashMap([2]u8, u64).init(alloc);
-
         var items = counts.iterator();
         while (items.next()) |item| {
             const key = item.key_ptr.*;
@@ -64,10 +82,12 @@ fn countFrequencies(alloc: std.mem.Allocator, input: []const u8, iterations: u8)
             } else {
                 try mapAdd(&newCounts, key, count);
             }
+            item.value_ptr.* = 0; // reset for next iteration
         }
 
-        counts.deinit();
-        counts = newCounts;
+        const tmp = newCounts;
+        newCounts = counts;
+        counts = tmp;
     }
 
     var letterCounts = [1]u64{0} ** 26;
