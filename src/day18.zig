@@ -9,6 +9,9 @@ pub fn main() anyerror!void {
 fn solve(alloc: std.mem.Allocator, input: []const u8) anyerror!void {
     const mag = try addSnailfishNumbers(alloc, input);
     std.debug.print("magnitude {}\n", .{mag});
+
+    const max = try highestMagnitude(alloc, input);
+    std.debug.print("max 2-line magnitude {}\n", .{max});
 }
 
 fn addSnailfishNumbers(alloc: std.mem.Allocator, input: []const u8) !u64 {
@@ -144,6 +147,35 @@ fn findFirstNumber(s: []const u8) ?[2]usize {
     return null;
 }
 
+fn highestMagnitude(alloc: std.mem.Allocator, input: []const u8) !usize {
+    var buf = std.ArrayList([]const u8).init(alloc);
+    defer buf.deinit();
+
+    {
+        var lines = std.mem.split(u8, input, "\n");
+        while (lines.next()) |line| try buf.append(line);
+    }
+
+    var max: usize = 0;
+    while (buf.items.len > 1) {
+        const last = buf.items[buf.items.len - 1];
+        for (buf.items[0..(buf.items.len - 2)]) |other| {
+            var combined = try std.fmt.allocPrint(alloc, "{s}\n{s}", .{ last, other });
+            defer alloc.free(combined);
+
+            const mag1 = try addSnailfishNumbers(alloc, combined);
+            if (mag1 > max) max = mag1;
+
+            const combined2 = try std.fmt.bufPrint(combined, "{s}\n{s}", .{ other, last });
+
+            const mag2 = try addSnailfishNumbers(alloc, combined2);
+            if (mag2 > max) max = mag2;
+        }
+        _ = buf.pop();
+    }
+    return max;
+}
+
 test {
     const input =
         \\[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]
@@ -160,4 +192,7 @@ test {
 
     const result = try addSnailfishNumbers(std.testing.allocator, input);
     try std.testing.expectEqual(result, 4140);
+
+    const result2 = try highestMagnitude(std.testing.allocator, input);
+    try std.testing.expectEqual(result2, 3993);
 }
